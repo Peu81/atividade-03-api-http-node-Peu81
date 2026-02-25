@@ -1,6 +1,6 @@
 import http from 'http';
+import { listaChamados } from './controllers/chamadosControllers.js';
 
-const array_infos = [{id_chamado: 1, nome_solicitante: "José Pedro"}] //responsavel por armazenar chamados.
 
 const server = http.createServer((req, res) => { // Cria o servidor e define a função para cada requisição
 
@@ -12,7 +12,7 @@ const server = http.createServer((req, res) => { // Cria o servidor e define a f
 
   if (req.method === "GET" && req.url.startsWith("/chamados")) { // Verifica rota GET /chamados
     res.writeHead(200, { "Content-Type": "application/json" }); // Define status 200 e tipo JSON
-    res.end(JSON.stringify({"Listagem de chamados" : array_infos})); // Retorna lista de chamados
+    res.end(JSON.stringify({"Listagem de chamados" : listaChamados()})); // Retorna lista de chamados
     return; // Interrompe execução
   }
 
@@ -23,3 +23,4 @@ const server = http.createServer((req, res) => { // Cria o servidor e define a f
 server.listen(3000, () => { // Inicia o servidor na porta 3000
   console.log("Servidor HTTP executando na porta 3000"); // Log informativo
 });
+
