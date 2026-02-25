@@ -46,9 +46,12 @@ Os dados deverão ser armazenados em memória (array).
 
 Edite esta seção antes de iniciar.
 
-Nome completo:
-Matrícula:
-Variação calculada:
+Nome completo: José Pedro Costa Duda
+
+Matrícula: 2023002289
+
+Variação calculada: 1
+
 
 Cálculo da variação:
 Último dígito da matrícula % 4
