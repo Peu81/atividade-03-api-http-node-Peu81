@@ -26,22 +26,25 @@ const server = http.createServer((req, res) => { // Cria o servidor e define a f
     if (fatiaUrl.length === 2 && fatiaUrl[1] !== "") {
       const id = Number(fatiaUrl[1]);
 
-      if (isNaN(id)) {
-        res.writeHead(400, {"content-type": "application/json"});
-        res.end(JSON.stringify({erro: "Bad Request"})); 
+      //verifica se não é valor numérico
+      if (isNaN(id)) { 
+        res.writeHead(400, {"content-type": "application/json"}); //Define status 400 e tipo JSON 
+        res.end(JSON.stringify({erro: "Bad Request"})); // Mensagem de erro
         return;
       };
 
-      const chamado = array_infos.find(chamados => chamados.id_chamado == id)
+      const chamado = array_infos.find(chamados => chamados.id_chamado == id) //percorre o array_infos atrás do ID informado
       
-      if (!chamado) {
-        res.writeHead(404, {"Content-Type": "application/json"});
-        res.end(JSON.stringify({erro: "Chamado não encontrado"}));
+      // verifica se o ID é inexistente
+      if (!chamado) { 
+        res.writeHead(404, {"Content-Type": "application/json"}); // Define status 400 e tipo JSON 
+        res.end(JSON.stringify({erro: "Chamado não encontrado"})); // Mensagem de erro
         return;
       };
 
-      res.writeHead(200, {"Content-Type": "application/json"});
-      res.end(JSON.stringify({chamado}))
+      res.writeHead(200, {"Content-Type": "application/json"}); // Define status 200 e tipo JSON
+      res.end(JSON.stringify({chamado})) // Retorna o chamado de acordo com o ID fornecido
+      return;
 
     }
   }
