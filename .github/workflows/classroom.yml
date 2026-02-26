@@ -1,166 +1,166 @@
-Nome : Autoavaliação
+name: Autograding
 
-ligado : [empurrar]
+on: [push]
 
-empregos :
-  test-api :
-    runs-on : ubuntu-latest
+jobs:
+  test-api:
+    runs-on: ubuntu-latest
 
-    passos :
-      - usa : actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-      - nome : Verificar commits mínimos
-        executar : |
+      - name: Check minimum commits
+        run: |
           COUNT=$(git rev-list --count HEAD)
-          se [ "$COUNT" -lt 5 ]; então
-            echo "Mínimo de 5 commits não atendidos: Atualmente $COUNT"
-            saída 1
+          if [ "$COUNT" -lt 5 ]; then
+            echo "Mínimo de 5 commits não atendido: Atualmente $COUNT"
+            exit 1
           fi
-      - nome : Verificar se o arquivo do servidor existe
-        executar : |
-          teste -f src/server.js || (echo "src/server.js não encontrado" && exit 1)
-      - nome : Check Express não utilizado
-        executar : |
-          se grep -Ri "express" .; então
-            echo "Expresso não é permitido"
-            saída 1
+      - name: Check server file exists
+        run: |
+          test -f src/server.js || (echo "src/server.js não encontrado" && exit 1)
+      - name: Check Express not used
+        run: |
+          if grep -Ri "express" .; then
+            echo "Express não é permitido"
+            exit 1
           fi
-      - nome : Verificar uso do ESM
-        executar : |
-          se grep -R "require(" src; então
-            echo "require() não permitido. Usar importação/exportação"
-            saída 1
+      - name: Check ESM usage
+        run: |
+          if grep -R "require(" src; then
+            echo "require() não permitido. Use import/export"
+            exit 1
           fi
-          grep -R "importar" src || (echo "importação não encontrada" && saída 1)
-      - nome : Nó de Configuração
-        utiliza : actions/setup-node@v4
-        com :
-          versão do nó : 20
+          grep -R "import " src || (echo "import não encontrado" && exit 1)
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-      - nome : Instalar dependências
-        executar : npm install
+      - name: Install dependencies
+        run: npm install
 
-      - nome : Iniciar servidor
-        executar : |
+      - name: Start server
+        run: |
           node src/server.js &
-          dormir 5
-      - nome : Extrair matrícula
-        id : matrícula
-        executar : |
+          sleep 5
+      - name: Extract matricula
+        id: matricula
+        run: |
           MATRICULA=$(grep -i "Matrícula:" README.md | awk '{print $2}')
-          ÚLTIMO_DÍGITO=${MATRICULA: -1}
-          VARIACAO=$((ÚLTIMO_DÍGITO % 4))
+          LAST_DIGIT=${MATRICULA: -1}
+          VARIACAO=$((LAST_DIGIT % 4))
           echo "variacao=$VARIACAO" >> $GITHUB_OUTPUT
-      - nome : Definir recurso
-        id : recurso
-        executar : |
-          se [ "${{ steps.matricula.outputs.variacao }}" = "0" ]; então
+      - name: Define resource
+        id: resource
+        run: |
+          if [ "${{ steps.matricula.outputs.variacao }}" = "0" ]; then
             echo "resource=atendimentos" >> $GITHUB_OUTPUT
-          elif [ "${{ steps.matricula.outputs.variacao }}" = "1" ]; então
+          elif [ "${{ steps.matricula.outputs.variacao }}" = "1" ]; then
             echo "resource=chamados" >> $GITHUB_OUTPUT
-          elif [ "${{ steps.matricula.outputs.variacao }}" = "2" ]; então
+          elif [ "${{ steps.matricula.outputs.variacao }}" = "2" ]; then
             echo "resource=protocolos" >> $GITHUB_OUTPUT
-          outro
+          else
             echo "resource=requerimentos" >> $GITHUB_OUTPUT
           fi
-      - nome : Instalar jq
-        execute : sudo apt-get update && sudo apt-get install -y jq
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
 
       # -----------------------
-      # TESTE SAÚDE
+      # TESTE HEALTH
       # -----------------------
 
-      - nome : Teste de estado de saúde 200
-        executar : |
+      - name: Test health status 200
+        run: |
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/health)
-          [ "$STATUS" = "200" ] || sair 1
-      - nome : O teste de integridade retorna JSON
-        executar : |
+          [ "$STATUS" = "200" ] || exit 1
+      - name: Test health returns JSON
+        run: |
           curl -s http://localhost:3000/health | jq . > /dev/null
       # -----------------------
-      # TESTE OBTER LISTA INICIAL
+      # TESTE GET LISTA INICIAL
       # -----------------------
 
-      - nome : Teste GET lista retorna array
-        executar : |
+      - name: Test GET list returns array
+        run: |
           curl -s http://localhost:3000/${{ steps.resource.outputs.resource }} | jq 'type' | grep array
       # -----------------------
-      # POSTAGEM DE TESTE VÁLIDO
+      # TESTE POST VÁLIDO
       # -----------------------
 
-      - nome : Criar primeiro item
-        id : criar1
-        executar : |
-          RECURSO=${{ steps.resource.outputs.resource }}
-          if [ "$RESOURCE" = "atendimentos" ]; então
-            DATA='{"aluno":"João","assunto":"Duvida"}'
-          elif [ "$RESOURCE" = "chamados" ]; então
+      - name: Create first item
+        id: create1
+        run: |
+          RESOURCE=${{ steps.resource.outputs.resource }}
+          if [ "$RESOURCE" = "atendimentos" ]; then
+            DATA='{"aluno":"Joao","assunto":"Duvida"}'
+          elif [ "$RESOURCE" = "chamados" ]; then
             DATA='{"solicitante":"Maria","descricao":"Problema","prioridade":"alta"}'
-          elif [ "$RESOURCE" = "protocolos" ]; então
+          elif [ "$RESOURCE" = "protocolos" ]; then
             DATA='{"nome":"Carlos","tipo":"Interno","data":"2025-01-01"}'
-          outro
+          else
             DATA='{"estudante":"Ana","categoria":"Financeiro","observacao":"Urgente"}'
           fi
-          RESPOSTA=$(curl -s -w "\n%{http_code}" -X POST http://localhost:3000/$RESOURCE \
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST http://localhost:3000/$RESOURCE \
             -H "Content-Type: application/json" \
-            -d "$DADOS")
-          CORPO=$(echo "$RESPOSTA" | head -n1)
+            -d "$DATA")
+          BODY=$(echo "$RESPONSE" | head -n1)
           STATUS=$(echo "$RESPONSE" | tail -n1)
-          [ "$STATUS" = "201" ] || sair 1
+          [ "$STATUS" = "201" ] || exit 1
           ID=$(echo "$BODY" | jq '.id')
           echo "id1=$ID" >> $GITHUB_OUTPUT
-      - nome : Criar segundo item (verificar ID incremental)
-        executar : |
-          RECURSO=${{ steps.resource.outputs.resource }}
-          if [ "$RESOURCE" = "atendimentos" ]; então
+      - name: Create second item (check incremental ID)
+        run: |
+          RESOURCE=${{ steps.resource.outputs.resource }}
+          if [ "$RESOURCE" = "atendimentos" ]; then
             DATA='{"aluno":"Pedro","assunto":"Nota"}'
-          elif [ "$RESOURCE" = "chamados" ]; então
+          elif [ "$RESOURCE" = "chamados" ]; then
             DATA='{"solicitante":"Luiz","descricao":"Erro","prioridade":"media"}'
-          elif [ "$RESOURCE" = "protocolos" ]; então
+          elif [ "$RESOURCE" = "protocolos" ]; then
             DATA='{"nome":"Julia","tipo":"Externo","data":"2025-02-01"}'
-          outro
-            DATA='{"estudante":"Bruno","categoria":"Académico","observacao":"Normal"}'
+          else
+            DATA='{"estudante":"Bruno","categoria":"Academico","observacao":"Normal"}'
           fi
-          RESPOSTA=$(curl -s -w "\n%{http_code}" -X POST http://localhost:3000/$RESOURCE \
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST http://localhost:3000/$RESOURCE \
             -H "Content-Type: application/json" \
-            -d "$DADOS")
-          CORPO=$(echo "$RESPOSTA" | head -n1)
+            -d "$DATA")
+          BODY=$(echo "$RESPONSE" | head -n1)
           STATUS=$(echo "$RESPONSE" | tail -n1)
-          [ "$STATUS" = "201" ] || sair 1
+          [ "$STATUS" = "201" ] || exit 1
           ID2=$(echo "$BODY" | jq '.id')
           ID1=${{ steps.create1.outputs.id1 }}
-          [ "$ID2" -gt "$ID1" ] || sair 1
+          [ "$ID2" -gt "$ID1" ] || exit 1
       # -----------------------
-      # TESTE OBTER POR ID
+      # TESTE GET POR ID
       # -----------------------
 
-      - nome : Teste GET por ID válido
-        executar : |
-          RECURSO=${{ steps.resource.outputs.resource }}
+      - name: Test GET by valid ID
+        run: |
+          RESOURCE=${{ steps.resource.outputs.resource }}
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/$RESOURCE/1)
-          [ "$STATUS" = "200" ] || sair 1
-      - nome : Teste GET com ID inválido retorna 404
-        executar : |
-          RECURSO=${{ steps.resource.outputs.resource }}
+          [ "$STATUS" = "200" ] || exit 1
+      - name: Test GET invalid ID returns 404
+        run: |
+          RESOURCE=${{ steps.resource.outputs.resource }}
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/$RESOURCE/9999)
-          [ "$STATUS" = "404" ] || sair 1
+          [ "$STATUS" = "404" ] || exit 1
       # -----------------------
       # TESTES DE ERRO
       # -----------------------
 
-      - nome : O teste JSON inválido retorna 400
-        executar : |
-          RECURSO=${{ steps.resource.outputs.resource }}
+      - name: Test invalid JSON returns 400
+        run: |
+          RESOURCE=${{ steps.resource.outputs.resource }}
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
             -X POST http://localhost:3000/$RESOURCE \
             -H "Content-Type: application/json" \
-            -d '{ inválido')
-          [ "$STATUS" = "400" ] || sair 1
-      - nome : O teste de campo ausente retorna 422
-        executar : |
-          RECURSO=${{ steps.resource.outputs.resource }}
+            -d '{ invalido')
+          [ "$STATUS" = "400" ] || exit 1
+      - name: Test missing field returns 422
+        run: |
+          RESOURCE=${{ steps.resource.outputs.resource }}
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
             -X POST http://localhost:3000/$RESOURCE \
             -H "Content-Type: application/json" \
             -d '{}')
-          [ "$STATUS" = "422" ] || sair 1
+          [ "$STATUS" = "422" ] || exit 1
