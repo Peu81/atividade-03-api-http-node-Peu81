@@ -1,5 +1,5 @@
 import http from 'http';
-import { listaChamados } from './controllers/chamadosControllers.js';
+import * as chamadosControl from './controllers/chamadosControllers.js';
 const server = http.createServer((req, res) => { // Cria o servidor e define a função para cada requisição
 
   if (req.method === "GET" && req.url === "/health") { // Verifica rota GET /health
@@ -9,8 +9,9 @@ const server = http.createServer((req, res) => { // Cria o servidor e define a f
   }
 
   if (req.method === "GET" && req.url.startsWith("/chamados")) { // Verifica rota GET /chamados
+    const dados = chamadosControl.listaChamados()
     res.writeHead(200, { "Content-Type": "application/json" }); // Define status 200 e tipo JSON
-    res.end(JSON.stringify({"Listagem de chamados" : listaChamados()})); // Retorna lista de chamados registrados via função
+    res.end(JSON.stringify({"Listagem de chamados" : dados})); // Retorna lista de chamados registrados via função
     return; // Interrompe execução
   }
 

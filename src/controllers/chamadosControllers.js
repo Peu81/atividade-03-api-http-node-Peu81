@@ -1,5 +1,5 @@
-import { array_infos } from '../data/chamados.js';
+import * as chamadoService from '../services/chamadosServices.js';
 
 export const listaChamados = () => {
-    return array_infos;
-}; // Função que retorna a lista de chamados registrados.
+    return chamadoService.buscaChamados();
+}; // Função que entrega ao servidor a listagem de chamados registrados
