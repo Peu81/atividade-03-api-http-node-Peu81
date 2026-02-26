@@ -14,9 +14,9 @@ const server = http.createServer((req, res) => { // Cria o servidor e define a f
     return; // Interrompe execução
   }
 
-  if (req.method === "GET" && req.url.startsWith("/chamados")) { // Verifica rota GET /chamados
+  if (req.method === "GET" && req.url.startsWith("/chamados")) { // Verifica rota GET /chamados 
     res.writeHead(200, { "Content-Type": "application/json" }); // Define status 200 e tipo JSON
-    res.end(JSON.stringify({array_infos})); // Retorna lista de chamados registrados em array_infos
+    res.end(JSON.stringify(array_infos)); // Retorna lista de chamados registrados em array_infos
     return; // Interrompe execução
   }
 
