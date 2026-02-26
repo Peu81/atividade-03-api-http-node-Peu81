@@ -1,5 +1,11 @@
 import http from 'http';
-import * as chamadosControl from './controllers/chamadosControllers.js';
+
+const array_infos = [{id_chamado: 1, nome_solicitante: "Joana Fragoso", 
+    descricao: "Reinicializações Inesperadas", 
+    prioridade: "alta"}]; //responsável por armazenar chamados.
+
+let incrementoId = 2
+
 const server = http.createServer((req, res) => { // Cria o servidor e define a função para cada requisição
 
   if (req.method === "GET" && req.url === "/health") { // Verifica rota GET /health
@@ -8,13 +14,37 @@ const server = http.createServer((req, res) => { // Cria o servidor e define a f
     return; // Interrompe execução
   }
 
-  if (req.method === "GET" && req.url.startsWith("/chamados")) { // Verifica rota GET /chamados
-    const dados = chamadosControl.listaChamados()
+  if (req.method === "GET" && req.url.startsWith("/")) { // Verifica rota GET /chamados
     res.writeHead(200, { "Content-Type": "application/json" }); // Define status 200 e tipo JSON
-    res.end(JSON.stringify({"Listagem de chamados" : dados})); // Retorna lista de chamados registrados via função
+    res.end(JSON.stringify({array_infos})); // Retorna lista de chamados registrados em array_infos
     return; // Interrompe execução
   }
 
+  if (req.method === "GET") {
+    const fatiaUrl = req.url.split("/")
+  
+    if (fatiaUrl.length === 2 && fatiaUrl[1] !== "") {
+      const id = Number(fatiaUrl[1]);
+
+      if (isNaN(id)) {
+        res.writeHead(400, {"content-type": "application/json"});
+        res.end(JSON.stringify({erro: "Bad Request"})); 
+        return;
+      };
+
+      const chamado = array_infos.find(chamados => chamados.id_chamado == id)
+      
+      if (!chamado) {
+        res.writeHead(404, {"Content-Type": "application/json"});
+        res.end(JSON.stringify({erro: "Chamado não encontrado"}));
+        return;
+      };
+
+      res.writeHead(200, {"Content-Type": "application/json"});
+      res.end(JSON.stringify({chamado}))
+
+    }
+  }
 
   res.end(); // Finaliza resposta
 });
